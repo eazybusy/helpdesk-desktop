@@ -1,0 +1,491 @@
+/* Latin: Instrument Sans (Regular for 100–500, Bold for 600–900); digits/IDs: Geist Mono. Georgian: Noto Sans Georgian. All OFL. */
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("./assets/fonts/InstrumentSans-Regular.ttf") format("truetype");
+  font-weight: 100 500;
+  font-display: swap;
+  unicode-range: U+0000-02FF, U+2000-206F, U+2190-21FF, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("./assets/fonts/InstrumentSans-Bold.ttf") format("truetype");
+  font-weight: 600 900;
+  font-display: swap;
+  unicode-range: U+0000-02FF, U+2000-206F, U+2190-21FF, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./assets/fonts/GeistMono-Regular.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@import "@fontsource-variable/noto-sans-georgian/standard.css";
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ tokens */
+
+:root {
+  /* surfaces: pure white everywhere; structure comes from hairlines and soft shadows, not grey fills */
+  --bg: #ffffff; /* header */
+  --chrome: #ffffff; /* sidebar */
+  --panel: #f5f6f8; /* main canvas: cards sit on it; list/detail panes stay white */
+  --raised: #ffffff; /* cards, inputs, active tabs */
+  --sunken: #f4f6f9; /* tab tracks, search field, quiet fills */
+  --hover: #f6f7f9;
+  --line: #eaedf1;
+  --line-strong: #d9dee5;
+  --frame: #b9c3d0; /* 1px window edge, so the undecorated window is visible on white desktops */
+
+  --ink: #0d1b2a;
+  --ink-2: #4a5869;
+  --ink-3: #8691a1;
+
+  --accent: #004b88;
+  --accent-hover: #003b6c;
+  --accent-ink: #ffffff;
+  --accent-soft: #e8f0f9;
+  --ring: rgb(0 75 136 / 0.16);
+
+  --logo-cyan: #00aeef;
+  --logo-navy: #004b88;
+  --logo-text: #004b88;
+  --logo-text-en: #0a5ea8;
+
+  /* semantic: errors, warnings, success */
+  --critical: #c8331c;
+  --high: #c27010;
+  --ok: #15803d;
+
+  /* status: new red, in progress violet, closed green */
+  --st-new: #d32f2f;
+  --st-open: #6d43d9;
+  --st-closed: #15803d;
+
+  /* tints for status pills (precomputed, no color-mix) */
+  --st-new-bg: rgb(211 47 47 / 0.08);
+  --st-new-ring: rgb(211 47 47 / 0.22);
+  --st-open-bg: rgb(109 67 217 / 0.09);
+  --st-open-ring: rgb(109 67 217 / 0.2);
+  --st-closed-bg: rgb(21 128 61 / 0.09);
+  --st-closed-ring: rgb(21 128 61 / 0.22);
+
+  --chart-1: #1f6fc5;
+  --chart-2: #b07a12;
+
+  --shadow-xs: 0 1px 2px rgb(13 27 42 / 0.05);
+  --shadow-card: 0 1px 2px rgb(13 27 42 / 0.03), 0 4px 12px -4px rgb(13 27 42 / 0.06);
+  --shadow-float: 0 1px 2px rgb(13 27 42 / 0.04), 0 12px 32px -8px rgb(13 27 42 / 0.12);
+  --shadow-tab: 0 1px 2px rgb(13 27 42 / 0.08), 0 2px 6px -1px rgb(13 27 42 / 0.1), 0 0 0 1px rgb(13 27 42 / 0.05);
+  --shadow-btn: 0 1px 2px rgb(0 30 60 / 0.25), inset 0 1px 0 rgb(255 255 255 / 0.14);
+  --shadow-pop: 0 0 0 1px rgb(13 27 42 / 0.06), 0 4px 8px -2px rgb(13 27 42 / 0.08), 0 16px 36px -8px rgb(13 27 42 / 0.2);
+
+  /* shape */
+  --r-ctl: 8px;
+  --r-panel: 14px; /* cards */
+  --r-tile: 12px; /* category tiles */
+  --r-field: 10px; /* inputs, big buttons */
+  --r-item: 9px; /* sidebar items */
+}
+
+/* Sidebar and the "ახალი მოთხოვნა" button: follow the surfaces unless a skin paints the sidebar. */
+:root {
+  --side-bg: var(--chrome);
+  --side-ink: var(--ink);
+  --side-ink-2: var(--ink-2);
+  --side-ink-3: var(--ink-3);
+  --side-hover: var(--hover);
+  --side-active-bg: var(--accent-soft);
+  --side-active-ink: var(--accent);
+  --side-line: var(--line);
+  --cta-bg: var(--accent);
+  --cta-bg-hover: var(--accent-hover);
+  --cta-ink: var(--accent-ink);
+  --cta-outline-bg: var(--raised);
+  --cta-outline-ink: var(--accent);
+  --cta-outline-line: var(--accent);
+  --cta-outline-hover: var(--accent-soft);
+}
+
+.dark {
+  --bg: #0d151f;
+  --chrome: #0b121b;
+  --panel: #070c13;
+  --raised: #111b27;
+  --sunken: #0e1722;
+  --hover: #13202e;
+  --line: #1d2a39;
+  --line-strong: #2a3a4c;
+  --frame: #34475c;
+
+  --ink: #e5ecf3;
+  --ink-2: #9daec0;
+  --ink-3: #6a7d91;
+
+  --accent: #4cb3ee;
+  --accent-hover: #6cc2f2;
+  --accent-ink: #062033;
+  --accent-soft: #10304a;
+  --ring: rgb(76 179 238 / 0.22);
+
+  --logo-cyan: #00aeef;
+  --logo-navy: #3f8fdc;
+  --logo-text: #e5ecf3;
+  --logo-text-en: #5cb8ee;
+
+  --critical: #f07a63;
+  --high: #e6a54a;
+  --ok: #5fc086;
+
+  --st-new: #f07171;
+  --st-open: #a587f5;
+  --st-closed: #5fc086;
+
+  --st-new-bg: rgb(240 113 113 / 0.14);
+  --st-new-ring: rgb(240 113 113 / 0.3);
+  --st-open-bg: rgb(165 135 245 / 0.14);
+  --st-open-ring: rgb(165 135 245 / 0.28);
+  --st-closed-bg: rgb(95 192 134 / 0.14);
+  --st-closed-ring: rgb(95 192 134 / 0.28);
+
+  --chart-1: #3d9be6;
+  --chart-2: #b98a26;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.05), 0 16px 40px -10px rgb(0 0 0 / 0.6);
+  --shadow-tab: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px -1px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-btn: 0 1px 2px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.25);
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -8px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ glass
+   Both apps (employee desktop and staff web) use "glass": App sets data-skin="glass" on <html>.
+   The blocks below override part of the base tokens above; anything not overridden (status,
+   chart, warning colours, shadows) comes from :root / .dark. These rules go beyond tokens (they
+   reach .bg-raised, nav, footer), unlayered on purpose so they win over Tailwind's utilities.
+
+   Page background:   the body gradient right after each token block (light, then dark).
+   Cards / bars:      --raised (cards), --bg (top bar), --chrome (sidebar), --line (edges, dividers). */
+
+/* Glass, light: frosted panels over a soft colour mesh. */
+:root[data-skin="glass"]:not(.dark) {
+  --bg: rgb(255 255 255 / 0.55);
+  --chrome: rgb(255 255 255 / 0.4);
+  --panel: transparent;
+  --raised: rgb(255 255 255 / 0.8);
+  --sunken: rgb(110 135 170 / 0.1);
+  --hover: rgb(255 255 255 / 0.55);
+  --line: rgb(110 135 170 / 0.16);
+  --line-strong: rgb(120 140 170 / 0.28);
+  --ink: #0f1e33;
+  --ink-2: #44546b;
+  --ink-3: #7d8aa0;
+  --accent: #1d64d8;
+  --accent-hover: #164fae;
+  --accent-soft: rgb(29 100 216 / 0.1);
+  --ring: rgb(29 100 216 / 0.18);
+  --side-line: rgb(255 255 255 / 0.6);
+  --shadow-card: 0 1px 1px rgb(255 255 255 / 0.6) inset, 0 10px 30px -12px rgb(30 60 110 / 0.22);
+  --r-panel: 20px;
+  --r-tile: 16px;
+  --r-field: 12px;
+  --r-item: 12px;
+}
+:root[data-skin="glass"]:not(.dark) body {
+  background:
+    radial-gradient(55% 50% at 8% 0%, #c9e2ff 0%, transparent 62%),
+    radial-gradient(45% 55% at 100% 15%, #d2f4ee 0%, transparent 60%),
+    radial-gradient(65% 60% at 55% 105%, #e6e0ff 0%, transparent 62%),
+    #edf2f8;
+}
+
+/* Glass, dark: the same idea at night, glows under dark frosted panels. */
+:root.dark[data-skin="glass"] {
+  --bg: rgb(12 18 32 / 0.55);
+  --chrome: rgb(12 18 32 / 0.4);
+  --panel: transparent;
+  --raised: rgb(255 255 255 / 0.075);
+  --sunken: rgb(255 255 255 / 0.06);
+  --hover: rgb(255 255 255 / 0.07);
+  --line: rgb(255 255 255 / 0.09);
+  --line-strong: rgb(255 255 255 / 0.16);
+  --frame: rgb(255 255 255 / 0.14);
+  --ink: #eef2f8;
+  --ink-2: #a9b4c6;
+  --ink-3: #6f7b90;
+  --accent: #7cb6ff;
+  --accent-hover: #9ac7ff;
+  --accent-ink: #081325;
+  --accent-soft: rgb(124 182 255 / 0.13);
+  --ring: rgb(124 182 255 / 0.25);
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 20px 40px -20px rgb(0 0 0 / 0.6);
+  --r-panel: 20px;
+  --r-tile: 16px;
+  --r-field: 12px;
+  --r-item: 12px;
+}
+:root.dark[data-skin="glass"] body {
+  background:
+    radial-gradient(45% 45% at 12% 8%, rgb(56 120 255 / 0.32) 0%, transparent 62%),
+    radial-gradient(40% 50% at 92% 25%, rgb(20 184 166 / 0.2) 0%, transparent 60%),
+    radial-gradient(60% 50% at 50% 112%, rgb(139 92 246 / 0.26) 0%, transparent 62%),
+    #090e1a;
+}
+
+/* Glass: anything that floats over content (menus, dropdowns, search, toasts, tooltips) and the
+   settings cards must be readable first, glassy second: nearly opaque. */
+:root[data-skin="glass"]:not(.dark) .shadow-pop,
+:root[data-skin="glass"]:not(.dark) [data-sonner-toast],
+:root[data-skin="glass"]:not(.dark) [data-solid] {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+}
+:root.dark[data-skin="glass"] .shadow-pop,
+:root.dark[data-skin="glass"] [data-sonner-toast],
+:root.dark[data-skin="glass"] [data-solid] {
+  background-color: #141b2a !important;
+  backdrop-filter: none !important;
+}
+
+/* Glass: controls inside a glass card need their own edge, a touch whiter than the card. */
+:root[data-skin="glass"]:not(.dark) input:not([type="checkbox"]):not([aria-invalid="true"]):not(:focus),
+:root[data-skin="glass"]:not(.dark) form textarea:not([aria-invalid="true"]):not(:focus),
+:root[data-skin="glass"]:not(.dark) form [role="radio"][aria-checked="false"] {
+  border-color: rgb(110 135 170 / 0.24);
+}
+:root[data-skin="glass"]:not(.dark) input:not([type="checkbox"]),
+:root[data-skin="glass"]:not(.dark) form textarea,
+:root[data-skin="glass"]:not(.dark) form [role="radio"] {
+  background-color: rgb(255 255 255 / 0.72);
+}
+:root[data-skin="glass"]:not(.dark) form [role="radio"][aria-checked="false"]:hover {
+  background-color: rgb(255 255 255 / 0.92);
+  border-color: rgb(110 135 170 / 0.4);
+}
+:root[data-skin="glass"] [role="radiogroup"][aria-invalid="true"] [role="radio"][aria-checked="false"] {
+  border-color: rgb(200 51 28 / 0.5);
+}
+
+:root[data-skin="glass"]:not(.dark) .bg-raised,
+:root[data-skin="glass"]:not(.dark) .bg-bg,
+:root[data-skin="glass"]:not(.dark) nav,
+:root[data-skin="glass"]:not(.dark) footer,
+:root.dark[data-skin="glass"] .bg-raised,
+:root.dark[data-skin="glass"] .bg-bg,
+:root.dark[data-skin="glass"] nav,
+:root.dark[data-skin="glass"] footer {
+  backdrop-filter: blur(22px) saturate(1.5);
+}
+
+@theme inline {
+  --font-sans: "Instrument Sans", "Noto Sans Georgian Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Instrument Sans", "Noto Sans Georgian Variable", ui-monospace, Consolas, monospace;
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-critical: var(--critical);
+  --color-high: var(--high);
+  --color-ok: var(--ok);
+  --color-st-open: var(--st-open);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
+  --shadow-tab: var(--shadow-tab);
+  --shadow-btn: var(--shadow-btn);
+  --shadow-pop: var(--shadow-pop);
+  --radius-ctl: var(--r-ctl);
+  --radius-panel: var(--r-panel);
+  --radius-tile: var(--r-tile);
+  --radius-field: var(--r-field);
+  --radius-item: var(--r-item);
+}
+
+/* ------------------------------------------------------------------ base */
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  html {
+    font-size: 13.5px;
+    font-feature-settings: "tnum";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-bg font-sans text-ink;
+    overflow: hidden;
+    user-select: none;
+    cursor: default;
+  }
+  /* Window edge: the window is undecorated, so draw its frame ourselves (hidden when maximized). */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    border: 1px solid var(--frame);
+    pointer-events: none;
+    z-index: 100;
+  }
+  html.maximized body::after,
+  html.web body::after {
+    display: none;
+  }
+  input,
+  textarea,
+  [data-selectable] {
+    user-select: text;
+  }
+  button {
+    cursor: default;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  /* Thin scrollbars that stay out of the way: inset from the panel edges, visible on hover. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 10px;
+    transition: background-color 150ms;
+  }
+  :hover::-webkit-scrollbar-thumb {
+    background-color: var(--line-strong);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--ink-3);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Status colours (see StatusGlyph / StatusBadge). */
+.status-new { --s: var(--st-new, #d32f2f); --s-bg: var(--st-new-bg, rgb(211 47 47 / 0.08)); --s-ring: var(--st-new-ring, rgb(211 47 47 / 0.22)); }
+.status-open { --s: var(--st-open, #6d43d9); --s-bg: var(--st-open-bg, rgb(109 67 217 / 0.09)); --s-ring: var(--st-open-ring, rgb(109 67 217 / 0.2)); }
+.status-closed { --s: var(--st-closed, #15803d); --s-bg: var(--st-closed-bg, rgb(21 128 61 / 0.09)); --s-ring: var(--st-closed-ring, rgb(21 128 61 / 0.22)); }
+.status-fg,
+.status-pill {
+  color: var(--s);
+}
+.status-pill {
+  background: var(--s-bg);
+  box-shadow: inset 0 0 0 1px var(--s-ring);
+}
+
+/* Vertical scroll areas never scroll sideways; a stray pixel must not add a horizontal bar. */
+.overflow-y-auto {
+  overflow-x: hidden;
+}
+
+/* ------------------------------------------------------------------ utilities */
+
+@utility display {
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+/* Big, quiet page titles ("რა პრობლემა გაქვს?", "ჩემი მოთხოვნები"). */
+@utility title-light {
+  font-weight: 300;
+  letter-spacing: 0.005em;
+  line-height: 1.2;
+}
+
+/* Computer names, IPs, IDs, dates: monospaced, a touch of tracking. */
+@utility mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small uppercase-free section label used above groups of content. */
+@utility eyebrow {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--ink-3);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.anim-pop {
+  animation: pop-in 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.anim-fade {
+  animation: fade-in 160ms ease-out;
+}
+.anim-up {
+  animation: slide-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--sunken) 0%, var(--line) 50%, var(--sunken) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
