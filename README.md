@@ -143,3 +143,5 @@ NetBIOS სახელი 15 სიმბოლოა: `reg-mtskheta-lashaberad
 | შეცდომა / გაფრთხილება / წარმატება, გრაფიკები | `:root` / `.dark`: `--critical`, `--high`, `--ok`, `--chart-1`, `--chart-2` |
 
 შეცვლის შემდეგ `npm run dev` / `npm run dev:web:demo` ცვლილებას მაშინვე აჩვენებს.
+#   h e l p d e s k - d e s k t o p  
+ 
