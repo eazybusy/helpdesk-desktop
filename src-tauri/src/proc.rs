@@ -50,7 +50,7 @@ pub fn run_hidden(program: &str, args: &[&str], timeout: Duration) -> Result<Vec
 mod tests {
     use super::*;
 
-    #[cfg(unix)]
+
     #[test]
     fn captures_output_and_times_out() {
         let out = run_hidden("sh", &["-c", "echo hello"], Duration::from_secs(5)).unwrap();
