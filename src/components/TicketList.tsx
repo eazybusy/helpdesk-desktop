@@ -1,3 +1,4 @@
+import { MessageSquareText } from "lucide-react";
 import { memo } from "react";
 import { relative } from "@/lib/format";
 import { CATEGORY, regionName } from "@/lib/labels";
@@ -64,6 +65,12 @@ const Row = memo(function Row({ t, active, onSelect, showRequester }: { t: Ticke
             {t.region && <span className="text-ink-3">, {regionName(t.region)}</span>}
           </span>
           {/* The deadline is IT's business; employees don't see it. */}
+          {t.comment_count > 0 && (
+            <span className="tnum inline-flex shrink-0 items-center gap-1 text-[12px] text-ink-3" title={`კომენტარი: ${t.comment_count}`}>
+              <MessageSquareText className="size-3" />
+              {t.comment_count}
+            </span>
+          )}
           {showRequester && !done && <Deadline created={t.created_at} due={t.due_at} variant="compact" />}
         </div>
       </div>

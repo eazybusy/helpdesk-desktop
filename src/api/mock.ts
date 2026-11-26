@@ -14,6 +14,8 @@ import type {
   LogSnapshot,
   RemoteAccess,
   SlaPolicy,
+  CannedReply,
+  TicketComment,
 } from "@/lib/types";
 import { CATEGORY_ORDER, SLA_HOURS, regionFromHost } from "@/lib/labels";
 import type { HelpDeskApi } from "./index";
@@ -104,6 +106,7 @@ interface Row extends Ticket {
   remote: RemoteAccess | null;
   log_snapshot: LogSnapshot | null;
   history: HistoryEntry[];
+  comments: TicketComment[];
 }
 
 /** Deadlines per category (ვადები). The server keeps this; new tickets get due_at from it. */
@@ -114,6 +117,18 @@ const sla: SlaPolicy = {
 };
 
 let hid = 1;
+let cid = 1;
+
+/** A comment from IT: kept with the ticket and logged in its history (the journal shows it too). */
+function comment(r: Row, author: User, body: string, at: number) {
+  const c: TicketComment = { id: cid++, author, body, at: iso(at) };
+  r.comments.push(c);
+  r.comment_count = r.comments.length;
+  r.last_comment = { author, body, at: c.at };
+  r.history.push(H(at, author, "commented", { value: body.length > 140 ? `${body.slice(0, 139)}…` : body }));
+  r.updated_at = c.at;
+  return c;
+}
 const H = (at: number, actor: User | null, kind: HistoryEntry["kind"], rest: Partial<HistoryEntry> = {}): HistoryEntry => ({
   id: hid++,
   at: iso(at),
@@ -162,6 +177,9 @@ function rowFrom(
     updated_at: history[history.length - 1].at,
     due_at: iso(s.created + sla.hours[s.category] * HOUR),
     issue_count: s.snapshot?.issues.length ?? 0,
+    comment_count: 0,
+    last_comment: null,
+    comments: [],
     snapshot: s.snapshot,
     // Seeds: ID and password already in place (the SYSTEM task ran when the ticket was opened).
     remote:
@@ -179,6 +197,21 @@ const rows: Row[] = seeds.map((s, i) => {
   const created = now() - s.ageMin * MIN;
   return rowFrom(2040 + seeds.length - i, { ...s, created, device: devices[s.requester], snapshot: withIssues(SNAPSHOTS[s.pc], created) });
 });
+{
+  // One answered ticket with a comment, so the employee's side shows what comments look like.
+  const monitor = rows.find((r) => r.subject === "მონიტორი ციმციმებს");
+  if (monitor) comment(monitor, u(1), "მონიტორის კაბელი შევცვალეთ. თუ ისევ დაიწყებს ციმციმს, გამოგზავნეთ ახალი მოთხოვნა.", Date.parse(monitor.created_at) + 55 * MIN);
+}
+
+/** The IT team's ready-made replies. {სახელი} and {ნომერი} are filled in when one is inserted. */
+let rid = 1;
+const replies: CannedReply[] = [
+  ["არ ეხება IT-ს", "გამარჯობა, {სახელი}! ეს საკითხი IT სამსახურს არ ეხება. გთხოვთ, მიმართოთ შესაბამის სამსახურს. მოთხოვნა {ნომერი} დახურულია."],
+  ["გადატვირთეთ კომპიუტერი", "{სახელი}, გთხოვთ, გადატვირთოთ კომპიუტერი და შეგვატყობინოთ, თუ პრობლემა ისევ გამეორდება."],
+  ["დისტანციურად დაგიკავშირდებით", "{სახელი}, ახლა დისტანციურად დაგიკავშირდებით (RustDesk). გთხოვთ, კომპიუტერი არ გამორთოთ."],
+  ["ცნობილი პრობლემაა", "პრობლემა ცნობილია და მასზე უკვე ვმუშაობთ. მოგვარებისთანავე შეგატყობინებთ."],
+  ["მოგვარდა", "პრობლემა მოგვარებულია. თუ ისევ გამეორდება, გამოგზავნეთ ახალი მოთხოვნა."],
+].map(([title, body]) => ({ id: rid++, title, body, author: u(1), updated_at: iso(now() - 3 * 24 * HOUR) }));
 
 // ---- report history: a year of closed tickets that the lists don't show ----
 
@@ -240,7 +273,7 @@ function visible(r: Row, viewer: User) {
   return isFree(r) || r.assignee?.id === viewer.id;
 }
 
-const summary = ({ snapshot: _s, log_snapshot: _l, history: _h, remote: _r, ...t }: Row, viewer: User): Ticket => ({
+const summary = ({ snapshot: _s, log_snapshot: _l, history: _h, remote: _r, comments: _c, ...t }: Row, viewer: User): Ticket => ({
   ...t,
   suspected_problem: isStaff(viewer) ? t.suspected_problem : null,
   delegation_note: isStaff(viewer) ? t.delegation_note : null,
@@ -276,6 +309,25 @@ export function createMockApi(currentUser: () => User | null): HelpDeskApi {
   const touch = (r: Row) => (r.updated_at = iso(now()));
   const staffOnly = (v: User) => {
     if (!isStaff(v)) throw new ApiError(403, "მხოლოდ IT-სთვის.");
+  };
+  const checkTitle = (t: string) => {
+    const x = t.trim();
+    if (!x || x.length > 80) throw new ApiError(422, "სათაური სავალდებულოა (მაქს. 80 სიმბოლო).");
+    return x;
+  };
+  const checkBody = (t: string) => {
+    const x = t.trim();
+    if (!x || x.length > 4000) throw new ApiError(422, "ტექსტი სავალდებულოა (მაქს. 4000 სიმბოლო).");
+    return x;
+  };
+  /** Anyone in IT may add replies; only the author or the admin may change or remove one. */
+  const ownReply = (id: number) => {
+    const viewer = me();
+    staffOnly(viewer);
+    const x = replies.find((r) => r.id === id);
+    if (!x) throw new ApiError(404, "მზა პასუხი ვერ მოიძებნა.");
+    if (x.author.id !== viewer.id && !isAdmin(viewer)) throw new ApiError(403, "სხვის მზა პასუხს მხოლოდ მთავარი ადმინი ცვლის.");
+    return x;
   };
   const rowForSam = (sam: string) => rows.find((r) => r.requester.username === sam);
   // The year of history behind the report and the deadlines page (built once, with the deadlines in force then).
@@ -364,6 +416,7 @@ export function createMockApi(currentUser: () => User | null): HelpDeskApi {
               : h.kind === "returned" ? { ...h, kind: "unassigned" as const, from: null, note: null }
               : h,
             ),
+        comments: r.comments.map((c) => ({ ...c })),
       };
       return detail;
     },
@@ -398,6 +451,10 @@ export function createMockApi(currentUser: () => User | null): HelpDeskApi {
           row.status = "open";
           row.updated_at = iso(now());
           row.history.push(H(now(), nino, "taken", { assignee: nino }));
+          setTimeout(() => {
+            if (row.assignee?.id === nino.id && row.status === "open")
+              comment(row, nino, `${viewer.full_name.split(" ")[0]}, გთხოვთ, გადატვირთოთ კომპიუტერი და შეგვატყობინოთ, თუ პრობლემა ისევ გამეორდება.`, now());
+          }, 20_000);
           setTimeout(() => {
             if (row.assignee?.id !== nino.id || row.status !== "open") return;
             row.status = "closed";
@@ -472,6 +529,47 @@ export function createMockApi(currentUser: () => User | null): HelpDeskApi {
       r.history.push(H(now(), viewer, "returned", { from: viewer, note: note.trim() || null }));
       touch(r);
       return summary(r, viewer);
+    },
+
+    async addComment(id, body) {
+      await wait(200);
+      const viewer = me();
+      staffOnly(viewer);
+      const r = find(id, viewer);
+      const text = body.trim();
+      if (!text) throw new ApiError(422, "კომენტარი ცარიელია.");
+      if (text.length > 4000) throw new ApiError(422, "კომენტარი ძალიან გრძელია (მაქს. 4000 სიმბოლო).");
+      return { ...comment(r, viewer, text, now()) };
+    },
+
+    async listReplies() {
+      await wait();
+      staffOnly(me());
+      return replies.map((x) => ({ ...x })).sort((a, b) => a.title.localeCompare(b.title, "ka"));
+    },
+
+    async createReply({ title, body }) {
+      await wait(200);
+      const viewer = me();
+      staffOnly(viewer);
+      const x: CannedReply = { id: rid++, title: checkTitle(title), body: checkBody(body), author: viewer, updated_at: iso(now()) };
+      replies.push(x);
+      return { ...x };
+    },
+
+    async updateReply(id, { title, body }) {
+      await wait(200);
+      const x = ownReply(id);
+      x.title = checkTitle(title);
+      x.body = checkBody(body);
+      x.updated_at = iso(now());
+      return { ...x };
+    },
+
+    async deleteReply(id) {
+      await wait(200);
+      const x = ownReply(id);
+      replies.splice(replies.indexOf(x), 1);
     },
 
     async listAudit(query) {

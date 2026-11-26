@@ -1,4 +1,6 @@
 import type {
+  CannedReply,
+  TicketComment,
   Agent,
   AuditEntry,
   AuditQuery,
@@ -36,6 +38,13 @@ export interface HelpDeskApi {
   delegate(id: number, assigneeId: number, note: string): Promise<Ticket>;
   /** Assigned agent: send a delegated ticket back to the admin's dispatch inbox. */
   returnToDispatch(id: number, note: string): Promise<Ticket>;
+  /** IT: a comment the employee will see (and be notified about). */
+  addComment(id: number, body: string): Promise<TicketComment>;
+  /** IT: the team's ready-made replies. */
+  listReplies(): Promise<CannedReply[]>;
+  createReply(reply: { title: string; body: string }): Promise<CannedReply>;
+  updateReply(id: number, reply: { title: string; body: string }): Promise<CannedReply>;
+  deleteReply(id: number): Promise<void>;
   listAgents(): Promise<Agent[]>;
   /** Admin: the audit journal (who took / assigned / reassigned / returned what, when, from where). */
   listAudit(query: AuditQuery): Promise<AuditEntry[]>;

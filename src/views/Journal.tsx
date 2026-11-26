@@ -19,6 +19,7 @@ const ACTION: Record<HistoryKind, { label: string; tone: string }> = {
   status: { label: "სტატუსი", tone: "text-accent bg-accent-soft ring-accent/20" },
   category: { label: "კატეგორია", tone: "text-ink-2 bg-sunken ring-line" },
   created: { label: "შეიქმნა", tone: "text-ink-2 bg-sunken ring-line" },
+  commented: { label: "კომენტარი", tone: "text-st-open bg-[var(--st-open-bg)] ring-[var(--st-open-ring)]" },
 };
 
 const CLIENT: Record<NonNullable<AuditEntry["client"]>, string> = { web: "ვები", desktop: "აპი", agent: "PC" };

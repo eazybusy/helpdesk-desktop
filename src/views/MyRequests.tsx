@@ -5,6 +5,7 @@ import {
   Clock,
   Inbox,
   Layers,
+  MessageSquareText,
   Search,
   Wrench,
 } from "lucide-react";
@@ -271,6 +272,12 @@ function Row({ t, onOpen }: { t: Ticket; onOpen: () => void }) {
           {by && ` · ${by}`}
         </span>
       </span>
+      {t.comment_count > 0 && (
+        <span className="tnum inline-flex items-center gap-1 text-[12.5px] text-accent" title={`IT-ის კომენტარი: ${t.comment_count}`}>
+          <MessageSquareText className="size-3.5" />
+          {t.comment_count}
+        </span>
+      )}
       <StatusBadge status={t.status} />
     </button>
   );

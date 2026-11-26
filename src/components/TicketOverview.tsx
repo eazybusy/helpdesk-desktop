@@ -6,6 +6,7 @@ import { dateTime, relative } from "@/lib/format";
 import { CATEGORY, STATUS, regionName } from "@/lib/labels";
 import type { HistoryEntry, TicketCategory, TicketDetail, TicketStatus, User } from "@/lib/types";
 import { isStaff } from "@/store/session";
+import { Comments } from "./Comments";
 import { IssueList } from "./DevicePanel";
 import { Dropdown } from "./ui/Dropdown";
 import { Avatar } from "./ui/marks";
@@ -44,6 +45,8 @@ export function TicketOverview({
             <p data-selectable className="mt-2 text-[14.5px] leading-[1.7] whitespace-pre-wrap">{t.description}</p>
           </article>
         </section>
+
+        <Comments t={t} viewer={viewer} />
 
         {staff && t.suspected_problem && (
           <button onClick={() => onOpen("events")} className="flex w-full gap-3 rounded-[10px] border border-line bg-raised px-3.5 py-3 text-left transition-colors hover:border-line-strong">
@@ -127,7 +130,9 @@ function DelegatedToMe({ t }: { t: TicketDetail }) {
   );
 }
 
-function History({ items, viewer }: { items: HistoryEntry[]; viewer: User }) {
+function History({ items: all, viewer }: { items: HistoryEntry[]; viewer: User }) {
+  // Comments have their own section above; the journal still lists them.
+  const items = all.filter((h) => h.kind !== "commented");
   if (!items.length) return null;
   return (
     <section className="border-t border-line pt-5">
@@ -163,6 +168,7 @@ function describe(h: HistoryEntry, viewer: User) {
     case "returned": return `${who}: დააბრუნა`;
     case "status": return `${who}: სტატუსი „${STATUS[h.value as TicketStatus] ?? h.value}“`;
     case "category": return `${who}: კატეგორია „${CATEGORY[h.value as TicketCategory] ?? h.value}“`;
+    case "commented": return `${who}: კომენტარი`;
   }
 }
 

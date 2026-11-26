@@ -136,6 +136,7 @@ const VERB: Partial<Record<AuditEntry["action"], (e: AuditEntry) => string>> = {
   delegated: (e) => `გადასცა ${e.to?.full_name ?? ""}`,
   returned: () => "დააბრუნა",
   status: (e) => (e.value === "closed" ? "დაასრულა" : e.value === "open" ? "ხელახლა გახსნა" : "დააბრუნა რიგში"),
+  commented: () => "დაწერა კომენტარი",
 };
 
 /** The last moves across the whole service, newest first; new ones slide in. */

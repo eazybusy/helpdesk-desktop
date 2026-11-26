@@ -116,6 +116,28 @@ export function useDelegate(id: number) {
   });
 }
 
+export function useAddComment(id: number) {
+  const inv = useInvalidate();
+  return useMutation({ mutationFn: (body: string) => api().addComment(id, body), onSuccess: () => inv(id), onError: errorToast });
+}
+
+export const useReplies = (enabled = true) => useQuery({ queryKey: ["replies"], queryFn: () => api().listReplies(), staleTime: 60_000, enabled });
+
+/** Create (no id) or edit a ready-made reply. */
+export function useSaveReply() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, title, body }: { id?: number; title: string; body: string }) => (id ? api().updateReply(id, { title, body }) : api().createReply({ title, body })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["replies"] }),
+    onError: errorToast,
+  });
+}
+
+export function useDeleteReply() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: number) => api().deleteReply(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["replies"] }), onError: errorToast });
+}
+
 export function useReturnToDispatch(id: number) {
   const inv = useInvalidate();
   return useMutation({ mutationFn: (note: string) => api().returnToDispatch(id, note), onSuccess: () => inv(id), onError: errorToast });

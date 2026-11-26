@@ -27,6 +27,11 @@
 | PATCH | `/api/tickets/{id}` | IT (იხ. უფლებები) | `{status?, category?, assignee_id?}` → `Ticket` |
 | POST | `/api/tickets/{id}/delegate` | admin | `{assignee_id, note}` → `Ticket` |
 | POST | `/api/tickets/{id}/return` | მინიჭებული agent | `{note}` → `Ticket` — რეგიონული მოთხოვნა ბრუნდება ადმინთან |
+| POST | `/api/tickets/{id}/comments` | IT (ვინც ამ მოთხოვნას ხედავს) | `{body}` → `TicketComment` — თანამშრომელი ხედავს და შეტყობინება მიუვა |
+| GET | `/api/replies` | IT | `CannedReply[]` — გუნდის მზა პასუხები |
+| POST | `/api/replies` | IT | `{title, body}` → `CannedReply` |
+| PATCH | `/api/replies/{id}` | ავტორი ან admin | `{title, body}` → `CannedReply` |
+| DELETE | `/api/replies/{id}` | ავტორი ან admin | `204` |
 | GET | `/api/agents` | admin | `Agent[]` — `User` + `active_count` (დატვირთვა არჩევისას) |
 | GET | `/api/audit` | admin | `AuditEntry[]`; query: `action` (`assignment` ან ერთი `kind`), `person_id`, `since`, `q`, `limit` |
 | GET | `/api/stats` | IT | `Stats` (+ `by_origin: {hq, region}` — აქტიური, admin; `team[].closed_today`) |
@@ -232,6 +237,39 @@ ORDER BY h.ticket_id, h.at;
 
 ვებში: „რეპორტი“ → „მიწერები და გადაწერები“ (ცხრილი + ჯაჭვი „ნინო → გიორგი → ნინო“); ორივე CSV-ში იგივე ბლოკია.
 
+## კომენტარები და მზა პასუხები
+
+IT (სპეციალისტი ან ადმინი) მოთხოვნაზე წერს კომენტარს, რომელიც **თანამშრომელს უჩანს** აპში და **შეტყობინება მიუვა**
+(მაგ. „ეს საკითხი IT-ს არ ეხება, მიმართეთ …“). თანამშრომელი კომენტარს არ წერს.
+
+```jsonc
+// TicketDetail.comments — ძველიდან ახლისკენ; თანამშრომელიც იღებს
+[ { "id": 7, "author": User, "body": "მონიტორის კაბელი შევცვალეთ…", "at": "2026-11-18T10:40:00Z" } ]
+
+// Ticket (სიებშიც) — ამით აპი ხვდება, რომ ახალი კომენტარია, და აჩვენებს შეტყობინებას
+"comment_count": 1,
+"last_comment": { "author": User, "body": "…", "at": "…" }      // ან null
+```
+
+- **ცხრილი:** `ticket_comments(id, ticket_id FK, author_id FK, body text CHECK (length(body) BETWEEN 1 AND 4000), at timestamptz DEFAULT now())`.
+- `POST /api/tickets/{id}/comments`: მხოლოდ IT (`require_staff`) და მხოლოდ თუ ეს მოთხოვნა მას უჩანს (იგივე წესი, რაც `GET`-ზე);
+  `body.strip()` ცარიელი → `422`. იმავე ტრანზაქციაში `ticket_history`: `kind='commented'`, `value` = ტექსტის პირველი 140 სიმბოლო
+  (ჟურნალში ჩანს), და `tickets.updated_at = now()`.
+- `comment_count` / `last_comment` — `GET /api/tickets`-ის ყველა ელემენტზე (თანამშრომლის `scope=requested`-ზეც).
+- **შეტყობინება:** აპი ყოველ 30 წამში (tray-შიც) ადარებს `comment_count`-ს წინასთან → Windows notification
+  „ახალი კომენტარი: #2049 …“ + ავტორი და ტექსტის დასაწყისი. სერვერს push არ სჭირდება.
+
+```jsonc
+// CannedReply — GET/POST /api/replies, PATCH/DELETE /api/replies/{id}
+{ "id": 3, "title": "არ ეხება IT-ს", "body": "გამარჯობა, {სახელი}! ეს საკითხი IT სამსახურს არ ეხება… მოთხოვნა {ნომერი} დახურულია.",
+  "author": User, "updated_at": "…" }
+```
+
+- **ცხრილი:** `canned_replies(id, title varchar(80) NOT NULL, body text NOT NULL CHECK (length(body) <= 4000), author_id FK, updated_at)`.
+- ყველა IT ხედავს ყველას და ამატებს; შეცვლა / წაშლა — ავტორი ან admin (სხვა → `403`). სია `title`-ით დალაგებული.
+- `{სახელი}` და `{ნომერი}` სერვერი **არ ცვლის** — აპი ჩასვამს თანამშრომლის სახელს და `#ნომერს` ტექსტში ჩასმისას.
+  კომენტარად უკვე შევსებული ტექსტი მოდის.
+
 ## ვადები (SLA) — `/api/sla`
 
 ვადას მთავარი ადმინი აყენებს **კატეგორიის მიხედვით** (ვებში „SLA“ → „ვადები“).
@@ -302,6 +340,7 @@ GROUP BY resolved_by_id ORDER BY closed DESC;
 | `unassigned` | ადმინმა შემსრულებელი მოხსნა | ადმინი | ძველი | — |
 | `returned` | შემსრულებელმა დააბრუნა (რეგიონული → ადმინს, სხვა → რიგში) | შემსრულებელი | შემსრულებელი | — |
 | `status` / `category` | ველის ცვლილება (`value` = ახალი მნიშვნელობა) | ვინც შეცვალა | — | — |
+| `commented` | IT-მ კომენტარი დაწერა (`value` = ტექსტის პირველი 140 სიმბოლო; სრული — `ticket_comments`) | ავტორი | — | — |
 
 ```sql
 CREATE TABLE ticket_history (

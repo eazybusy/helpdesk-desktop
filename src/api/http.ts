@@ -1,4 +1,6 @@
 import type {
+  CannedReply,
+  TicketComment,
   Agent,
   AuditEntry,
   AuditQuery,
@@ -94,6 +96,11 @@ export function createHttpApi(
     updateTicket: (id, patch: TicketPatch) => request<Ticket>("PATCH", `/api/tickets/${id}`, patch),
     delegate: (id, assignee_id, note) => request<Ticket>("POST", `/api/tickets/${id}/delegate`, { assignee_id, note }),
     returnToDispatch: (id, note) => request<Ticket>("POST", `/api/tickets/${id}/return`, { note }),
+    addComment: (id, body) => request<TicketComment>("POST", `/api/tickets/${id}/comments`, { body }),
+    listReplies: () => request<CannedReply[]>("GET", "/api/replies"),
+    createReply: (reply) => request<CannedReply>("POST", "/api/replies", reply),
+    updateReply: (id, reply) => request<CannedReply>("PATCH", `/api/replies/${id}`, reply),
+    deleteReply: (id) => request<void>("DELETE", `/api/replies/${id}`),
     listAgents: () => request<Agent[]>("GET", "/api/agents"),
     listAudit: (query: AuditQuery) => request<AuditEntry[]>("GET", `/api/audit${qs(query)}`),
     report: (query: ReportQuery) => request<Report>("GET", `/api/reports${qs(query)}`),

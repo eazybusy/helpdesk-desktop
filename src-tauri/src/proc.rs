@@ -46,10 +46,10 @@ pub fn run_hidden(program: &str, args: &[&str], timeout: Duration) -> Result<Vec
     Ok(out)
 }
 
-#[cfg(test)]
+// Uses sh, so it runs on Linux/macOS (CI); on Windows the module is left out.
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
-
 
     #[test]
     fn captures_output_and_times_out() {

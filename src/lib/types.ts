@@ -234,6 +234,29 @@ export interface Ticket {
   due_at: string | null;
   /** `len(snapshot.issues)` — problems found on the computer. */
   issue_count: number;
+  /** Comments IT wrote on the ticket; the employee is notified when this grows. */
+  comment_count: number;
+  last_comment: { author: User; body: string; at: string } | null;
+}
+
+/** A note from IT (specialist or admin) on a ticket. The employee sees it in the app and gets a notification. */
+export interface TicketComment {
+  id: number;
+  author: User;
+  body: string;
+  at: string;
+}
+
+/**
+ * A ready-made reply for comments, shared by the IT team. Placeholders filled in when inserted:
+ * {სახელი} = the employee's first name, {ნომერი} = the ticket number.
+ */
+export interface CannedReply {
+  id: number;
+  title: string;
+  body: string;
+  author: User;
+  updated_at: string;
 }
 
 /**
@@ -242,6 +265,7 @@ export interface Ticket {
  * reassigned — the admin moved a ticket from one person to another
  * delegated  — the admin routed a regional ticket (from = previous holder, if any)
  * returned   — the holder gave it back (regional → dispatch, other → free queue)
+ * commented  — IT wrote a comment (value = its first 140 characters; the text itself is in `comments`)
  */
 export type HistoryKind =
   | "created"
@@ -252,7 +276,8 @@ export type HistoryKind =
   | "unassigned"
   | "returned"
   | "status"
-  | "category";
+  | "category"
+  | "commented";
 
 /** Kinds that change who is responsible for a ticket. */
 export const ASSIGNMENT_KINDS: HistoryKind[] = ["taken", "assigned", "reassigned", "delegated", "unassigned", "returned"];
@@ -316,6 +341,8 @@ export interface TicketDetail extends Ticket {
   /** IT only; null for requesters. */
   log_snapshot: LogSnapshot | null;
   history: HistoryEntry[];
+  /** Oldest first. Visible to the employee too. */
+  comments: TicketComment[];
 }
 
 /**
